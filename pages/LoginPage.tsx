@@ -1,6 +1,5 @@
-
-import React, { useState, FormEvent } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useState, FormEvent } from 'react';
+import { useAuth } from '../hooks/useAuth';
 import { Navigate, Link } from 'react-router-dom';
 
 const Spinner = () => (
@@ -10,15 +9,17 @@ const Spinner = () => (
     </svg>
 );
 
-const LoginPage: React.FC = () => {
+const LoginPage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [isAdmin, setIsAdmin] = useState(false);
     const { login, loading, error, token, user } = useAuth();
 
     const handleLogin = async (e: FormEvent) => {
         e.preventDefault();
         try {
-            await login(email, password);
+            // Only pass requireAdmin=true if admin checkbox is checked
+            await login(email, password, isAdmin);
         } catch (err) {
             console.error(err);
         }
@@ -33,7 +34,9 @@ const LoginPage: React.FC = () => {
             <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-lg">
                 <div className="text-center">
                     <h1 className="text-3xl font-bold text-blue-600">GlobalRemit</h1>
-                    <p className="mt-2 text-gray-500">Securely log in to your account</p>
+                    <p className="mt-2 text-gray-500">
+                        {isAdmin ? 'Admin Login' : 'Securely log in to your account'}
+                    </p>
                 </div>
 
                 <form className="mt-8 space-y-6" onSubmit={handleLogin}>
@@ -42,6 +45,21 @@ const LoginPage: React.FC = () => {
                             {error}
                         </div>
                     )}
+                    
+                    {/* Admin Mode Toggle */}
+                    <div className="flex items-center justify-center p-3 bg-gray-50 rounded-md border border-gray-200">
+                        <input
+                            id="admin-toggle"
+                            type="checkbox"
+                            checked={isAdmin}
+                            onChange={(e) => setIsAdmin(e.target.checked)}
+                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                        />
+                        <label htmlFor="admin-toggle" className="ml-2 text-sm text-gray-700">
+                            Login as Admin
+                        </label>
+                    </div>
+
                     <div className="space-y-4 rounded-md shadow-sm">
                         <div>
                             <label htmlFor="email-address" className="sr-only">Email address</label>
@@ -71,6 +89,13 @@ const LoginPage: React.FC = () => {
                                 onChange={(e) => setPassword(e.target.value)}
                             />
                         </div>
+                    </div>
+
+                    {/* Demo Credentials Info */}
+                    <div className="p-3 text-xs text-gray-600 bg-blue-50 rounded-md border border-blue-100">
+                        <p className="font-semibold mb-1">Demo Credentials:</p>
+                        <p>User: user@example.com / password123</p>
+                        <p>Admin: admin@example.com / admin123</p>
                     </div>
 
                     <div>

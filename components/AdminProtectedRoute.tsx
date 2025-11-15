@@ -1,13 +1,13 @@
 
-import React, { ReactElement } from 'react';
+import { ReactElement } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 interface AdminProtectedRouteProps {
   children: ReactElement;
 }
 
-const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) => {
+const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
   const { token, user } = useAuth();
 
   if (!token) {

@@ -1,8 +1,7 @@
 
-import React from 'react';
 import { Link } from 'react-router-dom';
 
-const USFlagIcon: React.FC = () => (
+const USFlagIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 72 72" className="rounded-full">
     <path fill="#eee" d="M0 0h72v72H0z"/>
     <path fill="#d22f27" d="M0 6v6h72V6Zm0 12v6h72v-6Zm0 12v6h72v-6Zm0 12v6h72v-6Zm0 12v6h72v-6Z"/>
@@ -11,13 +10,13 @@ const USFlagIcon: React.FC = () => (
   </svg>
 );
 
-const IndiaFlagIcon: React.FC = () => (
+const IndiaFlagIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 72 72" className="rounded-full">
     <path fill="#eee" d="M0 0h72v72H0z"/><path fill="#f15b25" d="M0 0h72v24H0z"/><path fill="#128807" d="M0 48h72v24H0z"/><circle cx="36" cy="36" r="8" fill="none" stroke="#192f5d" strokeWidth="2"/><g stroke="#192f5d" strokeWidth="1.5" strokeLinecap="round">{Array.from({length: 24}).map((_, i) => (<path key={i} d={`m36 36 0-8`} transform={`rotate(${i * 15} 36 36)`}/>))}</g>
   </svg>
 );
 
-const Header: React.FC = () => {
+const Header = () => {
   return (
     <header className="bg-white shadow-sm">
       <div className="container mx-auto px-4 py-3">

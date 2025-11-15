@@ -1,6 +1,5 @@
-
-import React, { useState, FormEvent } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useState, FormEvent } from 'react';
+import { useAuth } from '../hooks/useAuth';
 import { Navigate, Link } from 'react-router-dom';
 
 const Spinner = () => (
@@ -10,7 +9,7 @@ const Spinner = () => (
     </svg>
 );
 
-const SignUpPage: React.FC = () => {
+const SignUpPage = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');

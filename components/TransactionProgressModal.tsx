@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Quote } from '../types';
 
 interface TransactionProgressModalProps {
@@ -38,7 +38,7 @@ const steps = [
     'Transfer Successful',
 ];
 
-const TransactionProgressModal: React.FC<TransactionProgressModalProps> = ({ isOpen, onClose, details }) => {
+const TransactionProgressModal = ({ isOpen, onClose, details }: TransactionProgressModalProps) => {
     const [currentStep, setCurrentStep] = useState(0);
     const [blockchainHash, setBlockchainHash] = useState('');
 

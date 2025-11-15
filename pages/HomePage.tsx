@@ -1,5 +1,4 @@
 
-import React from 'react';
 import Header from '../components/Header';
 import LandingSendMoneyForm from '../components/LandingSendMoneyForm';
 import TrustFeatures from '../components/TrustFeatures';
@@ -8,7 +7,7 @@ import PartnerBanks from '../components/PartnerBanks';
 import WaysToSend from '../components/WaysToSend';
 import Footer from '../components/Footer';
 
-const HomePage: React.FC = () => {
+const HomePage = () => {
   return (
     <div className="bg-white">
       <Header />
