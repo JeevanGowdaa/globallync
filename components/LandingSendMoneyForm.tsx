@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 const USFlag: React.FC = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 72 72" className="rounded-full">
@@ -25,6 +26,7 @@ const LandingSendMoneyForm: React.FC = () => {
     const [sendAmount, setSendAmount] = useState('100.00');
     const [receiveAmount, setReceiveAmount] = useState('');
     const navigate = useNavigate();
+    const { token } = useAuth();
     const exchangeRate = 88.84;
     const fee = 3.99;
 
@@ -115,8 +117,18 @@ const LandingSendMoneyForm: React.FC = () => {
                 </div>
             </div>
             
-            <button onClick={() => navigate('/login')} className="w-full px-4 py-3 mt-8 font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Send Now
+            <button 
+                onClick={() => {
+                    // If user is logged in, go to send money page, otherwise go to login
+                    if (token) {
+                        navigate('/send');
+                    } else {
+                        navigate('/login');
+                    }
+                }} 
+                className="w-full px-4 py-3 mt-8 font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+                {token ? 'Send Money Now' : 'Login to Send Money'}
             </button>
         </div>
     );

@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate, Link, useNavigate } from 'react-router-dom';
 
 const Spinner = () => (
     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -15,11 +15,21 @@ const LoginPage = () => {
     const [isAdmin, setIsAdmin] = useState(false);
     const { login, loading, error, token, user } = useAuth();
 
+    const navigate = useNavigate();
+
     const handleLogin = async (e: FormEvent) => {
         e.preventDefault();
         try {
-            // Only pass requireAdmin=true if admin checkbox is checked
-            await login(email, password, isAdmin);
+            // Do not rely on the admin checkbox for routing — always login normally
+            // and route based on the returned user's role. The checkbox is optional
+            // and can be used to force-admin-only login if desired.
+            const loggedUser = await login(email, password);
+
+            // If login returned a user, navigate immediately based on role
+            if (loggedUser) {
+                navigate(loggedUser.role === 'admin' ? '/admin' : '/dashboard', { replace: true });
+                return;
+            }
         } catch (err) {
             console.error(err);
         }
@@ -56,7 +66,7 @@ const LoginPage = () => {
                             className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                         />
                         <label htmlFor="admin-toggle" className="ml-2 text-sm text-gray-700">
-                            Login as Admin
+                            Login as Admin (optional — routing is determined by account role)
                         </label>
                     </div>
 

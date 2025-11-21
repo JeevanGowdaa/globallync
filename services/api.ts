@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  // baseURL is removed to prevent "Invalid URL" errors in some environments.
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
 });
 
 api.interceptors.request.use((config) => {

@@ -9,7 +9,9 @@ import Step3Receiver from '../components/send_money/Step3_Receiver';
 import Step4AIAnalysis from '../components/send_money/Step4_AIAnalysis';
 import Step5Confirm from '../components/send_money/Step5_Confirm';
 import DashboardHeader from '../components/DashboardHeader';
-import api from '../services/api';
+import { completeTransferFlow, AIAnalysisResult, saveTransaction } from '../services/transactionService';
+import { useAuth } from '../hooks/useAuth';
+import TransactionProgressModal from '../components/TransactionProgressModal';
 
 const initialTransferDetails: TransferDetails = {
   fromCountry: { code: 'GB', name: 'United Kingdom', currency: 'GBP' },
@@ -49,7 +51,57 @@ const stepsConfig = [
 const SendMoneyFlowPage: React.FC = () => {
   const [step, setStep] = useState(1);
   const [transferDetails, setTransferDetails] = useState<TransferDetails>(initialTransferDetails);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showProgressModal, setShowProgressModal] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Receiver validation state
+  const [isReceiverValid, setIsReceiverValid] = useState<boolean | null>(null);
+  const [receiverId, setReceiverId] = useState<string | null>(null);
+
+  // Validate receiver account existence
+  const validateReceiver = async (email: string) => {
+    try {
+      setError(null);
+      // Call backend API to check receiver (requires authentication)
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('You must be logged in to send money.');
+        return false;
+      }
+
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/transactions/check-receiver?email=${encodeURIComponent(email)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (res.status === 401) {
+        setError('Your session has expired. Please log in again.');
+        return false;
+      }
+
+      const data = await res.json();
+      if (data.exists) {
+        setIsReceiverValid(true);
+        setReceiverId(data.id || null); // Store receiver ID
+        return true;
+      } else {
+        setIsReceiverValid(false);
+        setReceiverId(null);
+        setError(data.message || 'Receiver not found. They need to sign up first.');
+        return false;
+      }
+    } catch (err) {
+      setIsReceiverValid(false);
+      setReceiverId(null);
+      setError('Error validating receiver. Please try again.');
+      return false;
+    }
+  };
 
   const updateTransferDetails = (details: Partial<TransferDetails>) => {
     setTransferDetails(prev => ({ ...prev, ...details }));
@@ -59,26 +111,64 @@ const SendMoneyFlowPage: React.FC = () => {
   const handleBack = () => setStep(prev => prev - 1);
 
   const handleConfirm = async () => {
-    try {
-      // Map frontend state to a payload the backend expects
-      const payload = {
-        amount: transferDetails.sendAmount,
-        type: 'SEND',
-        status: 'Pending',
-        // Assuming backend can take the rich details object
-        details: transferDetails
-      };
-      
-      await api.post('/api/transactions/create', payload);
+    // Require receiver validation before proceeding
+    const receiverEmail = transferDetails.receiver.email;
+    const receiverOk = await validateReceiver(receiverEmail);
 
-      // On success, navigate to dashboard.
-      // A success message could be passed via state if needed.
-      navigate('/dashboard');
-    } catch (error) {
-      console.error('Failed to create transaction:', error);
-      // In a real app, you would show an error message to the user
-      alert('There was an error submitting your transfer. Please try again.');
+    if (!receiverOk) {
+      setError('Receiver not found. Please ensure the receiver has an account or invite them first.');
+      return;
     }
+
+    try {
+      setIsProcessing(true);
+      setError(null);
+      setShowProgressModal(true);
+
+      // Execute complete transfer flow
+      const result = await completeTransferFlow(transferDetails);
+      setAiAnalysis(result.aiAnalysis);
+      console.log('Transfer successful:', result);
+
+      // Save transaction to database for both sender and receiver
+      if (!receiverId) {
+        console.error('Receiver ID not available after validation');
+      } else {
+        try {
+          await saveTransaction({
+            receiver: transferDetails.receiver.fullName,
+            receiverEmail: transferDetails.receiver.email,
+            receiverId: receiverId, // Required: receiver's user ID
+            amountSent: transferDetails.sendAmount,
+            amountReceived: transferDetails.receiveAmount,
+            rate: transferDetails.exchangeRate,
+            route: result.aiAnalysis.bestRoute || transferDetails.fromCountry.currency + ' → ' + transferDetails.toCountry.currency,
+            riskScore: result.aiAnalysis.fraudScore || 0,
+            fromCountry: transferDetails.fromCountry,
+            toCountry: transferDetails.toCountry,
+            transferFee: transferDetails.transferFee,
+            deliveryMethod: transferDetails.deliveryMethod,
+            feeSaved: result.aiAnalysis?.savings || 0,
+            blockchainHash: result.blockchainHash || '',
+            status: 'Completed'
+          });
+          console.log('Transaction saved to database for both sender and receiver');
+        } catch (saveError) {
+          console.error('Error saving transaction:', saveError);
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      setShowProgressModal(false);
+      console.error('Transfer failed:', err);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleProgressModalClose = () => {
+    setShowProgressModal(false);
+    navigate('/dashboard');
   };
 
   const renderStep = () => {
@@ -137,9 +227,32 @@ const SendMoneyFlowPage: React.FC = () => {
       <div className="container mx-auto px-4 py-12">
         <Stepper currentStep={step} steps={stepsConfig} />
         <div className="mt-10 bg-white p-8 rounded-xl shadow-lg">
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+              <p className="font-semibold">Error</p>
+              <p className="text-sm">{error}</p>
+            </div>
+          )}
           {renderStep()}
         </div>
       </div>
+      
+      {showProgressModal && (
+        <TransactionProgressModal 
+          isOpen={showProgressModal}
+          onClose={handleProgressModalClose}
+          details={{
+            amount: transferDetails.sendAmount,
+            receiverName: transferDetails.receiver.fullName,
+            quote: {
+              rate: transferDetails.exchangeRate,
+              fee: transferDetails.transferFee,
+              feeSaved: aiAnalysis?.fraudScore ? 0 : transferDetails.transferFee * 0.2,
+              estimatedDelivery: aiAnalysis?.estimatedDeliveryTime || 'Calculating...'
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

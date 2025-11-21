@@ -30,22 +30,39 @@ const TransactionCard: React.FC<{ tx: Transaction }> = ({ tx }) => {
             // Can add a toast notification here
         });
     };
+
+    const isReceived = tx.transactionType === 'received';
+    const otherParty = isReceived ? tx.senderName || 'Sender' : tx.receiver;
+    const displayAmount = isReceived ? tx.amountReceived : tx.amountSent;
+    const displayCurrency = isReceived ? (tx.toCountry?.currency || 'INR') : (tx.fromCountry?.currency || 'USD');
+    const currencySymbol = displayCurrency === 'INR' ? '₹' : displayCurrency === 'USD' ? '$' : displayCurrency === 'GBP' ? '£' : '€';
     
     return (
         <div className="bg-white p-5 rounded-lg border border-gray-200 hover:shadow-md transition-shadow duration-300">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div className="flex items-center gap-4">
-                     <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-600">
-                        {tx.receiver.charAt(0)}
+                     <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                         isReceived ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
+                     }`}>
+                        {otherParty.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                        <p className="font-bold text-gray-800">{tx.receiver}</p>
+                        <div className="flex items-center gap-2">
+                            <p className="font-bold text-gray-800">
+                                {isReceived ? 'Received from' : 'Sent to'} {otherParty}
+                            </p>
+                            <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
+                                isReceived ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                            }`}>
+                                {isReceived ? 'Received' : 'Sent'}
+                            </span>
+                        </div>
                         <p className="text-sm text-gray-500">{tx.timeline}</p>
                     </div>
                 </div>
                 <div className="text-right">
-                    <p className="font-bold text-xl text-gray-800">
-                        ₹{tx.amountReceived.toLocaleString('en-IN')}
+                    <p className={`font-bold text-xl ${isReceived ? 'text-green-600' : 'text-gray-800'}`}>
+                        {currencySymbol}{displayAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                     <StatusBadge status={tx.status} />
                 </div>

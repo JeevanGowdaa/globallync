@@ -20,6 +20,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const decodedUser: User = jwtDecode(token);
         setUser(decodedUser);
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
+        // Fetch fresh user data from backend
+        api.get('/api/auth/me')
+          .then(response => {
+            if (response.data) {
+              setUser(response.data);
+            }
+          })
+          .catch(err => {
+            console.error('Error fetching user data:', err);
+            // Keep decoded user if API fails
+          });
       } catch (e) {
         console.error("Invalid token:", e);
         localStorage.removeItem('token');
@@ -29,17 +41,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [token]);
 
-  const login = async (email: string, password: string, requireAdmin: boolean = false) => {
+  const login = async (email: string, password: string, requireAdmin: boolean = false): Promise<User | void> => {
     setLoading(true);
     setError(null);
 
     try {
       let mockResponse: any = null;
       let apiSuccess = false;
+      let apiUser: any = null;
 
       try {
         const response = await api.post('/api/auth/login', { email, password });
         const { token: responseToken, user: responseUser } = response.data;
+        apiUser = responseUser;
 
         if (responseToken && responseUser) {
           if (requireAdmin && responseUser.role !== 'admin') {
@@ -72,6 +86,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setToken(mockResponse.token);
         setUser(mockResponse.user);
         api.defaults.headers.common['Authorization'] = `Bearer ${mockResponse.token}`;
+        return mockResponse.user;
+      }
+      
+      // return the user from successful API login
+      if (apiSuccess) {
+        return apiUser || undefined;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Login failed.';

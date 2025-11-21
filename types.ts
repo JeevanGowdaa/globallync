@@ -4,11 +4,18 @@ export interface User {
   name: string;
   email: string;
   role: 'user' | 'admin';
+  createdAt?: string | Date;
 }
 
 export interface Transaction {
   _id: string;
+  transactionType?: 'sent' | 'received';
+  senderId?: string;
+  senderName?: string;
+  senderEmail?: string;
   receiver: string;
+  receiverEmail?: string;
+  receiverId?: string;
   status: 'Completed' | 'Pending' | 'Failed' | 'Reviewed' | 'Processing';
   feeSaved: number;
   timeline: string;
@@ -18,11 +25,12 @@ export interface Transaction {
   rate: number;
   route: string;
   riskScore: number;
-  user: {
+  user?: {
     id: string;
     name: string;
     email: string;
   };
+  relatedTransactionId?: string;
 }
 
 export interface Quote {
@@ -35,7 +43,7 @@ export interface Quote {
 export interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string, requireAdmin?: boolean) => Promise<void>;
+  login: (email: string, password: string, requireAdmin?: boolean) => Promise<User | void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
