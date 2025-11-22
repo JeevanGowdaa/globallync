@@ -34,7 +34,7 @@ const DotIcon = () => (
 const steps = [
     { name: 'Initiating Transfer', description: 'Setting up your transaction' },
     { name: 'Analyzing with AI Engine', description: 'Calculating best route & fraud check' },
-    { name: 'Checking Liquidity Pools', description: `Debiting ${details => details.quote.rate} pool, crediting receiver pool` },
+    { name: 'Checking Liquidity Pools', description: 'Debiting sender pool and crediting receiver pool' },
     { name: 'Processing with Blockchain', description: 'Settling transaction on smart contract' },
     { name: 'Transfer Successful', description: 'Transaction complete!' },
 ];

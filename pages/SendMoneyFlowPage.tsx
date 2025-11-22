@@ -116,8 +116,14 @@ const SendMoneyFlowPage: React.FC = () => {
     const receiverOk = await validateReceiver(receiverEmail);
 
     if (!receiverOk) {
-      setError('Receiver not found. Please ensure the receiver has an account or invite them first.');
-      return;
+      // Ask user whether to proceed when receiver is not registered
+      const proceed = window.confirm('Receiver not found. The receiver does not have an account. Do you want to continue and send to this email anyway? (They will be notified to sign up)');
+      if (!proceed) {
+        setError('Transfer cancelled. Please invite the receiver to sign up first.');
+        return;
+      }
+      // clear any previous error and continue; receiverId will be null
+      setError(null);
     }
 
     try {
